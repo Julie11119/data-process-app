@@ -4,25 +4,21 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import logging
-from scipy import stats
-from sklearn.preprocessing import MinMaxScaler
-from io import StringIO  # Import StringIO for buffer handling
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
-@st.cache_data(show_spinner=False)
 def load_data(uploaded_file, file_type):
     """
     Load data from various file types.
-
+    
     Args:
         uploaded_file (UploadedFile): The uploaded file from Streamlit.
         file_type (str): Type of the file (e.g., 'csv', 'xlsx', 'json').
-
+    
     Returns:
         pd.DataFrame: Loaded DataFrame.
-
+    
     Raises:
         ValueError: If the file type is unsupported or loading fails.
     """
@@ -53,160 +49,36 @@ def generate_data_summary(df):
     """
     summary = df.describe(include='all').to_string()
     return summary
-    
-# def generate_data_summary(df):
-#     """
-#     Generate a textual summary of the dataset.
 
-#     Args:
-#         df (pd.DataFrame): The DataFrame to summarize.
-
-#     Returns:
-#         str: A string containing summary statistics and information about the dataset.
-#     """
-#     try:
-#         summary = "### Dataset Summary\n\n"
-#         summary += f"**Number of Rows:** {df.shape[0]}\n\n"
-#         summary += f"**Number of Columns:** {df.shape[1]}\n\n"
-#         summary += "**Column Information:**\n\n"
-        
-#         # Use StringIO to capture df.info() output
-#         buffer = StringIO()
-#         df.info(buf=buffer)
-#         info_str = buffer.getvalue()
-#         summary += info_str
-        
-#         summary += "\n\n**Descriptive Statistics:**\n\n"
-#         summary += df.describe(include='all').to_string()
-#         logging.info("Data summary generated successfully.")
-#         return summary
-#     except Exception as e:
-#         logging.error(f"Error generating data summary: {e}")
-#         # Instead of using st.error here, return an error message
-#         return "Failed to generate data summary."
-
-@st.cache_data(show_spinner=False)
 def clean_data(df, cleaning_suggestions):
     """
-    Clean the DataFrame based on structured suggestions.
-
+    Clean the DataFrame based on suggestions.
+    
     Args:
         df (pd.DataFrame): The original DataFrame.
-        cleaning_suggestions (dict): Structured cleaning suggestions.
-
+        cleaning_suggestions (str): Suggestions for cleaning.
+    
     Returns:
         pd.DataFrame: Cleaned DataFrame.
     """
+    # Implement cleaning based on suggestions
+    # For simplicity, let's assume we drop rows with missing values
     try:
-        # Handle Missing Values
-        mv = cleaning_suggestions.get("missing_values", {})
-        mv_strategy = mv.get("strategy")
-        mv_columns = mv.get("columns", [])
-        mv_fill = mv.get("fill_value", None)
-        
-        if mv_strategy == "drop" and mv_columns:
-            df = df.dropna(subset=mv_columns)
-            logging.info(f"Dropped rows with missing values in columns: {mv_columns}")
-        
-        elif mv_strategy == "fill" and mv_columns:
-            fill_values = {}
-            for col in mv_columns:
-                if mv_fill == "mean":
-                    fill_values[col] = df[col].mean()
-                elif mv_fill == "median":
-                    fill_values[col] = df[col].median()
-                elif isinstance(mv_fill, (int, float, str)):
-                    fill_values[col] = mv_fill
-                else:
-                    fill_values[col] = df[col].mode()[0]  # Default to mode if unspecified
-            df = df.fillna(value=fill_values)
-            logging.info(f"Filled missing values in columns: {mv_columns} with {mv_fill}")
-        
-        # Handle Outliers
-        outliers = cleaning_suggestions.get("outliers", {})
-        outlier_strategy = outliers.get("strategy")
-        outlier_columns = outliers.get("columns", [])
-        outlier_method = outliers.get("method")
-        cap_value = outliers.get("cap_value")
-        
-        if outlier_strategy and outlier_columns:
-            for col in outlier_columns:
-                if outlier_strategy == "remove":
-                    if outlier_method == "IQR":
-                        Q1 = df[col].quantile(0.25)
-                        Q3 = df[col].quantile(0.75)
-                        IQR = Q3 - Q1
-                        lower_bound = Q1 - 1.5 * IQR
-                        upper_bound = Q3 + 1.5 * IQR
-                        df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
-                        logging.info(f"Removed outliers in column {col} using IQR.")
-                    elif outlier_method == "Z-score":
-                        z_scores = np.abs(stats.zscore(df[col]))
-                        df = df[z_scores < 3]
-                        logging.info(f"Removed outliers in column {col} using Z-score.")
-                
-                elif outlier_strategy == "cap":
-                    if outlier_method == "IQR":
-                        Q1 = df[col].quantile(0.25)
-                        Q3 = df[col].quantile(0.75)
-                        IQR = Q3 - Q1
-                        lower_bound = Q1 - 1.5 * IQR
-                        upper_bound = Q3 + 1.5 * IQR
-                        df[col] = np.where(df[col] < lower_bound, lower_bound,
-                                           np.where(df[col] > upper_bound, upper_bound, df[col]))
-                        logging.info(f"Capped outliers in column {col} using IQR.")
-                    elif outlier_method == "Z-score" and cap_value:
-                        z_scores = stats.zscore(df[col])
-                        df[col] = np.where(z_scores > cap_value, cap_value, df[col])
-                        df[col] = np.where(z_scores < -cap_value, -cap_value, df[col])
-                        logging.info(f"Capped outliers in column {col} using Z-score with cap value {cap_value}.")
-        
-        # Handle Data Types
-        data_types = cleaning_suggestions.get("data_types", {})
-        for col, dtype in data_types.items():
-            try:
-                if dtype == "int":
-                    df[col] = df[col].astype(int)
-                elif dtype == "float":
-                    df[col] = df[col].astype(float)
-                elif dtype == "category":
-                    df[col] = df[col].astype('category')
-                elif dtype == "datetime":
-                    df[col] = pd.to_datetime(df[col])
-                logging.info(f"Converted column {col} to {dtype}.")
-            except Exception as e:
-                logging.warning(f"Failed to convert column {col} to {dtype}: {e}")
-        
-        # Handle Additional Steps
-        additional_steps = cleaning_suggestions.get("additional_steps", [])
-        for step in additional_steps:
-            # Implement additional cleaning steps as needed
-            # Example: If step is "remove duplicate rows"
-            if "remove duplicate rows" in step.lower():
-                df = df.drop_duplicates()
-                logging.info("Removed duplicate rows.")
-            elif "normalize data" in step.lower():
-                scaler = MinMaxScaler()
-                numeric_cols = df.select_dtypes(include=[np.number]).columns
-                df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
-                logging.info("Normalized numeric columns.")
-            # Add more conditional steps based on expected additional steps
-        
-        logging.info("Data cleaning based on suggestions completed.")
-        return df
+        df_cleaned = df.dropna()
+        logging.info("Data cleaned successfully.")
+        return df_cleaned
     except Exception as e:
         logging.error(f"Error during data cleaning: {e}")
-        # Instead of using st.error here, return the original df or handle accordingly
+        st.error(f"Data cleaning failed: {e}")
         return df
 
-@st.cache_data(show_spinner=False)
 def perform_eda(df):
     """
     Perform Exploratory Data Analysis on the cleaned DataFrame.
-
+    
     Args:
         df (pd.DataFrame): The cleaned dataset.
-
+    
     Returns:
         dict: Dictionary containing various EDA results.
     """
@@ -219,7 +91,7 @@ def perform_eda(df):
         # Compute correlation matrix
         corr = numeric_df.corr()
         
-        # Additional EDA tasks can be added here (e.g., distributions, summary statistics)
+        # Additional EDA tasks can be added here
         
         eda_results = {
             'correlation_matrix': corr,
@@ -229,18 +101,18 @@ def perform_eda(df):
         logging.info("EDA performed successfully.")
         return eda_results
     except Exception as e:
-        st.error(f"⚠️ An error occurred during EDA: {e}")
+        st.error(f"An error occurred during EDA: {e}")
         logging.error(f"EDA error: {e}")
         return {}
 
 def suggest_visualizations(df, visualization_suggestions):
     """
     Suggest visualization types based on OpenAI's suggestions.
-
+    
     Args:
         df (pd.DataFrame): The cleaned DataFrame.
         visualization_suggestions (str): Suggestions from OpenAI.
-
+    
     Returns:
         list: List of suggested visualization types.
     """
@@ -251,18 +123,18 @@ def suggest_visualizations(df, visualization_suggestions):
         logging.info(f"Visualization suggestions: {viz_list}")
         return viz_list
     except Exception as e:
-        st.error(f"⚠️ Failed to parse visualization suggestions: {e}")
+        st.error(f"Failed to parse visualization suggestions: {e}")
         logging.error(f"Visualization suggestion parsing error: {e}")
         return []
 
 def build_initial_model(df, target_column):
     """
     Build an initial machine learning model.
-
+    
     Args:
         df (pd.DataFrame): The cleaned DataFrame.
         target_column (str): The column to predict.
-
+    
     Returns:
         dict: Model evaluation metrics.
     """
@@ -273,13 +145,6 @@ def build_initial_model(df, target_column):
     try:
         X = df.drop(columns=[target_column])
         y = df[target_column]
-        
-        # Identify numeric and categorical columns for encoding
-        numeric_cols = X.select_dtypes(include=[np.number]).columns
-        categorical_cols = X.select_dtypes(include=['object', 'category']).columns
-        
-        # One-Hot Encode categorical variables
-        X = pd.get_dummies(X, columns=categorical_cols, drop_first=True)
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
@@ -292,40 +157,30 @@ def build_initial_model(df, target_column):
         logging.info("Machine learning model built successfully.")
         return {'mse': mse}
     except Exception as e:
-        st.error(f"⚠️ Failed to build machine learning model: {e}")
+        st.error(f"Failed to build machine learning model: {e}")
         logging.error(f"ML model error: {e}")
         return {}
 
 def generate_narrative_insights(df, eda_results):
     """
     Generate narrative insights based on EDA results.
-
+    
     Args:
         df (pd.DataFrame): The cleaned DataFrame.
         eda_results (dict): Results from EDA.
-
+    
     Returns:
         str: Narrative insights.
     """
+    # Implement narrative generation based on EDA results
+    # This could involve summarizing the correlation matrix, highlighting key findings, etc.
     try:
-        insights = "### Narrative Insights\n\n"
+        insights = "The dataset contains the following correlations among numeric variables:\n\n"
         corr = eda_results.get('correlation_matrix', pd.DataFrame())
-        
-        if corr.empty:
-            insights += "No correlations to report."
-            return insights
-        
-        # Find top correlations
-        corr_unstacked = corr.abs().unstack()
-        corr_unstacked = corr_unstacked[corr_unstacked < 1]  # Exclude self-correlation
-        top_correlations = corr_unstacked.sort_values(ascending=False).drop_duplicates().head(6)
-        
-        insights += "The top correlations in the dataset are:\n\n"
-        for idx, value in top_correlations.items():
-            insights += f"- **{idx[0]}** and **{idx[1]}**: {value:.2f}\n"
-        
+        insights += corr.to_string()
+        logging.info("Narrative insights generated successfully.")
         return insights
     except Exception as e:
-        st.error(f"⚠️ Failed to generate narrative insights: {e}")
+        st.error(f"Failed to generate narrative insights: {e}")
         logging.error(f"Narrative insights error: {e}")
         return ""
