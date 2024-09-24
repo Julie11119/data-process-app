@@ -6,9 +6,9 @@ import numpy as np
 from openai_api import get_cleaning_suggestions, get_visualization_suggestions
 from data_processing import (load_data, generate_data_summary, clean_data, perform_eda, 
                              suggest_visualizations, build_initial_model, generate_narrative_insights)
-from utils.visualization import (create_histogram, create_scatter_plot, create_box_plot,
+from visualization import (create_histogram, create_scatter_plot, create_box_plot,
                                  create_heatmap, create_pie_chart, create_choropleth)
-from utils.helpers import identify_key_columns
+from helpers import identify_key_columns
 import time
 
 # Streamlit app configuration
