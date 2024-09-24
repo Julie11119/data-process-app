@@ -5,6 +5,7 @@ import numpy as np
 import streamlit as st
 import logging
 from scipy import stats
+from sklearn.preprocessing import MinMaxScaler
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -140,7 +141,6 @@ def clean_data(df, cleaning_suggestions):
                 df = df.drop_duplicates()
                 logging.info("Removed duplicate rows.")
             elif "normalize data" in step.lower():
-                from sklearn.preprocessing import MinMaxScaler
                 scaler = MinMaxScaler()
                 numeric_cols = df.select_dtypes(include=[np.number]).columns
                 df[numeric_cols] = scaler.fit_transform(df[numeric_cols])
