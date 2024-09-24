@@ -6,6 +6,7 @@ import streamlit as st
 import logging
 from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
+from io import StringIO  # Import StringIO for buffer handling
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -55,17 +56,20 @@ def generate_data_summary(df):
         summary += f"**Number of Rows:** {df.shape[0]}\n\n"
         summary += f"**Number of Columns:** {df.shape[1]}\n\n"
         summary += "**Column Information:**\n\n"
-        buffer = []
+        
+        # Use StringIO to capture df.info() output
+        buffer = StringIO()
         df.info(buf=buffer)
-        info_str = "\n".join(buffer)
+        info_str = buffer.getvalue()
         summary += info_str
+        
         summary += "\n\n**Descriptive Statistics:**\n\n"
         summary += df.describe(include='all').to_string()
         logging.info("Data summary generated successfully.")
         return summary
     except Exception as e:
         logging.error(f"Error generating data summary: {e}")
-        st.error(f"⚠️ Failed to generate data summary: {e}")
+        # Instead of using st.error here, return an error message
         return "Failed to generate data summary."
 
 @st.cache_data(show_spinner=False)
@@ -179,7 +183,7 @@ def clean_data(df, cleaning_suggestions):
         return df
     except Exception as e:
         logging.error(f"Error during data cleaning: {e}")
-        st.error(f"⚠️ Data cleaning failed: {e}")
+        # Instead of using st.error here, return the original df or handle accordingly
         return df
 
 @st.cache_data(show_spinner=False)
