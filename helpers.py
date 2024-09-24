@@ -1,6 +1,7 @@
 # utils/helpers.py
 
 import pandas as pd
+import numpy as np
 
 def identify_key_columns(df):
     """
@@ -13,7 +14,7 @@ def identify_key_columns(df):
         dict: Dictionary categorizing columns as numeric, categorical, datetime, etc.
     """
     key_cols = {
-        'numeric': df.select_dtypes(include=[pd.np.number]).columns.tolist(),
+        'numeric': df.select_dtypes(include=[np.number]).columns.tolist(),
         'categorical': df.select_dtypes(include=['object', 'category']).columns.tolist(),
         'datetime': df.select_dtypes(include=['datetime64']).columns.tolist()
     }
