@@ -230,4 +230,32 @@ def get_visualization_suggestions(data_description, retries=3):
             st.error(f"⚠️ An unexpected error occurred: {e}")
             logging.error(f"Unexpected error: {e}")
             return []
-
+def get_narrative_response(prompt):
+    """
+    Get a narrative response from OpenAI based on a user query.
+    Args:
+        prompt (str): The user-generated prompt.
+    Returns:
+        str: The narrative response from OpenAI.
+    """
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful data analysis assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=500,
+            temperature=0.3,
+        )
+        narrative = response.choices[0].message['content'].strip()
+        logging.info("Received narrative response from OpenAI.")
+        return narrative
+    except openai.error.OpenAIError as e:
+        st.error(f"⚠️ OpenAI API Error: {e}")
+        logging.error(f"OpenAI error: {e}")
+        return "Failed to generate a response due to an OpenAI API error."
+    except Exception as e:
+        st.error(f"⚠️ An unexpected error occurred: {e}")
+        logging.error(f"Unexpected error: {e}")
+        return "An unexpected error occurred while generating the response."
