@@ -31,7 +31,7 @@ def get_cleaning_suggestions(data_description):
     
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # or "gpt-4" if available
+            model="gpt-4",  # or "gpt-3.5-turbo"
             messages=[
                 {"role": "system", "content": "You are a helpful data scientist assistant."},
                 {"role": "user", "content": prompt}
