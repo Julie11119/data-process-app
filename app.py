@@ -56,22 +56,14 @@ if uploaded_file is not None:
             time.sleep(1)  # Simulate processing time
         st.success('Data loaded successfully!')
         
-        # # Display DataFrame Information
-        # st.subheader("🗂️ Cleaned Data Information")
-        # st.write("**Shape:**", df.shape)
-        # st.write("**Data Types:**")
-        # st.write(df.dtypes)
-        # st.write("**Missing Values:**")
-        # st.write(df.isnull().sum())
-        
         # Display DataFrame Information
         st.subheader("🗂️ Raw Data")
         st.dataframe(df.head())
         
-        # # Generate data summary
-        # st.subheader("📝 Dataset Summary")
+        # Generate data summary
+        st.subheader("📝 Dataset Summary")
         data_summary = generate_data_summary(df)
-        # st.text(data_summary)
+        st.text(data_summary)
         
         # Get cleaning suggestions from OpenAI
         st.subheader("💡 Data Cleaning Suggestions")
@@ -101,10 +93,10 @@ if uploaded_file is not None:
         st.subheader("🔍 Cleaned Data Sample")
         st.dataframe(df_cleaned.head())
         
-        # Generate summary of cleaned data
-        st.subheader("📝 Cleaned Data Summary")
+        # # Generate summary of cleaned data
+        # st.subheader("📝 Cleaned Data Summary")
         cleaned_summary = generate_data_summary(df_cleaned)
-        st.text(cleaned_summary)
+        # st.text(cleaned_summary)
         
         # Get visualization suggestions from OpenAI
         st.subheader("🎨 Visualization Suggestions")
