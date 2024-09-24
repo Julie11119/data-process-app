@@ -14,49 +14,6 @@ logging.basicConfig(level=logging.INFO)
 # Load OpenAI API key from Streamlit secrets
 openai.api_key = st.secrets["openai_api_key"]
 
-# Define JSON schema for cleaning suggestions
-cleaning_schema = {
-    "type": "object",
-    "properties": {
-        "missing_values": {
-            "type": "object",
-            "properties": {
-                "strategy": {"type": "string", "enum": ["drop", "fill"]},
-                "columns": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
-                "fill_value": {"type": ["string", "number", "null"]}
-            },
-            "required": ["strategy", "columns"]
-        },
-        "outliers": {
-            "type": "object",
-            "properties": {
-                "strategy": {"type": "string", "enum": ["remove", "cap"]},
-                "columns": {
-                    "type": "array",
-                    "items": {"type": "string"}
-                },
-                "method": {"type": "string", "enum": ["IQR", "Z-score"]},
-                "cap_value": {"type": ["number", "null"]}
-            },
-            "required": ["strategy", "columns", "method"]
-        },
-        "data_types": {
-            "type": "object",
-            "additionalProperties": {
-                "type": "string",
-                "enum": ["int", "float", "category", "datetime"]
-            }
-        },
-        "additional_steps": {
-            "type": "array",
-            "items": {"type": "string"}
-        }
-    },
-    "required": ["missing_values", "outliers", "data_types"]
-}
 
 def extract_json_from_response(response_text):
     """
