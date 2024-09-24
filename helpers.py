@@ -4,20 +4,17 @@ import pandas as pd
 
 def identify_key_columns(df):
     """
-    Identify key columns such as categorical, numerical, and date columns.
-    
+    Identify key columns in the DataFrame for analysis.
+
     Args:
-        df (pd.DataFrame): The dataset.
-    
+        df (pd.DataFrame): The DataFrame to analyze.
+
     Returns:
-        dict: Dictionary with lists of categorical, numerical, and date columns.
+        dict: Dictionary categorizing columns as numeric, categorical, datetime, etc.
     """
-    categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
-    numerical_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    date_cols = df.select_dtypes(include=['datetime']).columns.tolist()
-    
-    return {
-        'categorical': categorical_cols,
-        'numerical': numerical_cols,
-        'date': date_cols
+    key_cols = {
+        'numeric': df.select_dtypes(include=[pd.np.number]).columns.tolist(),
+        'categorical': df.select_dtypes(include=['object', 'category']).columns.tolist(),
+        'datetime': df.select_dtypes(include=['datetime64']).columns.tolist()
     }
+    return key_cols
