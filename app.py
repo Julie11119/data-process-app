@@ -13,7 +13,7 @@ from data_processing import (
     build_initial_model,
     generate_narrative_insights
 )
-from utils.visualization import (
+from visualization import (
     create_histogram,
     create_scatter_plot,
     create_box_plot,
@@ -21,7 +21,7 @@ from utils.visualization import (
     create_pie_chart,
     create_choropleth
 )
-from utils.helpers import identify_key_columns
+from helpers import identify_key_columns
 import time
 import os
 
