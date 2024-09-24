@@ -114,8 +114,18 @@ def get_cleaning_suggestions(data_description):
         # Parse JSON
         suggestions_json = json.loads(suggestions)
 
-        # Validate JSON schema
-        validate(instance=suggestions_json, schema=cleaning_schema)
+        # Validate JSON schema with enhanced error handling
+        try:
+            validate(instance=suggestions_json, schema=cleaning_schema)
+        except ValidationError as ve:
+            # Check if the specific error is related to `cap_value` not being numeric
+            if "cap_value" in ve.message and "number" in ve.message:
+                st.warning(f"⚠️ Validation warning for cap_value: {ve.message}. Ignoring non-numeric values.")
+                # Set cap_value to None or some default value
+                for outlier_suggestion in suggestions_json.get('outliers', {}).get('columns', []):
+                    outlier_suggestion['cap_value'] = None  # Set to None or default value
+            else:
+                raise ve  # Re-raise any other validation errors
 
         logging.info("Received and validated cleaning suggestions from OpenAI.")
         return suggestions_json
@@ -135,79 +145,3 @@ def get_cleaning_suggestions(data_description):
         st.error(f"⚠️ An unexpected error occurred: {e}")
         logging.error(f"Unexpected error: {e}")
         return {}
-
-def get_visualization_suggestions(data_description):
-    """
-    Get visualization suggestions from OpenAI based on the dataset description.
-
-    Args:
-        data_description (str): Description of the dataset.
-
-    Returns:
-        str: Visualization suggestions as a comma-separated string.
-    """
-    prompt = f"""
-    You are a data visualization expert. Given the following dataset description, suggest the most effective visualizations to uncover insights and trends.
-
-    Dataset Description:
-    {data_description}
-
-    Please provide your suggestions as a comma-separated list of visualization types. For example:
-    Histogram, Scatter Plot, Box Plot
-    """
-
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Ensure you have access to GPT-4
-            messages=[
-                {"role": "system", "content": "You are a helpful data visualization expert."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=200,
-            temperature=0.3,
-        )
-        suggestions = response.choices[0].message['content'].strip()
-
-        # Assuming suggestions are comma-separated
-        logging.info("Received visualization suggestions from OpenAI.")
-        return suggestions
-    except openai.error.OpenAIError as e:
-        st.error(f"⚠️ OpenAI API Error: {e}")
-        logging.error(f"OpenAI error: {e}")
-        return ""
-    except Exception as e:
-        st.error(f"⚠️ An unexpected error occurred: {e}")
-        logging.error(f"Unexpected error: {e}")
-        return ""
-
-def get_narrative_response(prompt):
-    """
-    Get a narrative response from OpenAI based on a user query.
-
-    Args:
-        prompt (str): The user-generated prompt.
-
-    Returns:
-        str: The narrative response from OpenAI.
-    """
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful data analysis assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,
-            temperature=0.3,
-        )
-        narrative = response.choices[0].message['content'].strip()
-        logging.info("Received narrative response from OpenAI.")
-        return narrative
-    except openai.error.OpenAIError as e:
-        st.error(f"⚠️ OpenAI API Error: {e}")
-        logging.error(f"OpenAI error: {e}")
-        return "Failed to generate a response due to an OpenAI API error."
-    except Exception as e:
-        st.error(f"⚠️ An unexpected error occurred: {e}")
-        logging.error(f"Unexpected error: {e}")
-        return "An unexpected error occurred while generating the response."
