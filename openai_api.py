@@ -182,18 +182,15 @@ def get_cleaning_suggestions(data_description, retries=3):
             st.error(f"⚠️ An unexpected error occurred: {e}")
             logging.error(f"Unexpected error: {e}")
             return {}
-
 def get_visualization_suggestions(data_description, retries=3):
     """
     Get visualization suggestions from OpenAI based on the dataset description.
-    Implements a retry mechanism in case of parsing failures.
-
+    
     Args:
         data_description (str): Description of the dataset.
-        retries (int): Number of retries in case of failure.
-
+    
     Returns:
-        list: List of suggested visualization types.
+        str: Visualization suggestions.
     """
     prompt = f"""
     You are a data visualization expert. Given the following dataset description, suggest the most effective visualizations to uncover insights and trends.
@@ -201,35 +198,79 @@ def get_visualization_suggestions(data_description, retries=3):
     Dataset Description:
     {data_description}
 
-    Please provide your suggestions as a comma-separated list of visualization types. For example:
-    Histogram, Scatter Plot, Box Plot
+    Visualization Suggestions:
     """
+    
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  
+            messages=[
+                {"role": "system", "content": "You are a helpful data visualization expert."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=200,
+            temperature=0.3,
+        )
+        # Extract the assistant's reply
+        suggestions = response.choices[0].message['content'].strip()
+        logging.info("Received visualization suggestions from OpenAI.")
+        return suggestions
+    except openai.error.OpenAIError as e:
+        st.error(f"An OpenAI error occurred: {e}")
+        logging.error(f"OpenAI error: {e}")
+        return ""
+    except Exception as e:
+        st.error(f"An unexpected error occurred: {e}")
+        logging.error(f"Unexpected error: {e}")
+        return ""
+# def get_visualization_suggestions(data_description, retries=3):
+#     """
+#     Get visualization suggestions from OpenAI based on the dataset description.
+#     Implements a retry mechanism in case of parsing failures.
 
-    for attempt in range(retries):
-        try:
-            response = openai.ChatCompletion.create(
-                model="gpt-4",
-                messages=[
-                    {"role": "system", "content": "You are a helpful data visualization expert."},
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=200,
-                temperature=0.3,
-            )
-            suggestions = response.choices[0].message['content'].strip()
+#     Args:
+#         data_description (str): Description of the dataset.
+#         retries (int): Number of retries in case of failure.
 
-            # Split the suggestions into a list
-            viz_list = [viz.strip() for viz in suggestions.split(',') if viz.strip()]
-            logging.info("Received visualization suggestions from OpenAI.")
-            return viz_list
-        except openai.error.OpenAIError as e:
-            st.error(f"⚠️ OpenAI API Error: {e}")
-            logging.error(f"OpenAI error: {e}")
-            return []
-        except Exception as e:
-            st.error(f"⚠️ An unexpected error occurred: {e}")
-            logging.error(f"Unexpected error: {e}")
-            return []
+#     Returns:
+#         list: List of suggested visualization types.
+#     """
+#     prompt = f"""
+#     You are a data visualization expert. Given the following dataset description, suggest the most effective visualizations to uncover insights and trends.
+
+#     Dataset Description:
+#     {data_description}
+
+#     Please provide your suggestions as a comma-separated list of visualization types. For example:
+#     Histogram, Scatter Plot, Box Plot
+#     """
+
+#     for attempt in range(retries):
+#         try:
+#             response = openai.ChatCompletion.create(
+#                 model="gpt-4",
+#                 messages=[
+#                     {"role": "system", "content": "You are a helpful data visualization expert."},
+#                     {"role": "user", "content": prompt}
+#                 ],
+#                 max_tokens=200,
+#                 temperature=0.3,
+#             )
+#             suggestions = response.choices[0].message['content'].strip()
+
+#             # Split the suggestions into a list
+#             viz_list = [viz.strip() for viz in suggestions.split(',') if viz.strip()]
+#             logging.info("Received visualization suggestions from OpenAI.")
+#             return viz_list
+#         except openai.error.OpenAIError as e:
+#             st.error(f"⚠️ OpenAI API Error: {e}")
+#             logging.error(f"OpenAI error: {e}")
+#             return []
+#         except Exception as e:
+#             st.error(f"⚠️ An unexpected error occurred: {e}")
+#             logging.error(f"Unexpected error: {e}")
+#             return []
+
 def get_narrative_response(prompt):
     """
     Get a narrative response from OpenAI based on a user query.
