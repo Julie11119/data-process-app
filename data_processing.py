@@ -77,10 +77,10 @@ def clean_data(df, cleaning_suggestions):
                     else:
                         st.warning(f"⚠️ Column '{col}' is not numeric, cannot fill with median.")
                 
-                elif df[col].dtype == 'object' or df[col].dtype.name == 'category':
-                    mode_value = df[col].mode()[0]
-                    df[col] = df[col].fillna(mode_value)
-                    st.info(f"Filled missing values in column '{col}' with mode (most frequent value): {mode_value}.")
+                # elif df[col].dtype == 'object' or df[col].dtype.name == 'category':
+                #     mode_value = df[col].mode()[0]
+                #     df[col] = df[col].fillna(mode_value)
+                #     st.info(f"Filled missing values in column '{col}' with mode (most frequent value): {mode_value}.")
 
                 else:
                 # Ensure fill_value is the same type as the column
