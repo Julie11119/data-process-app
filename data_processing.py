@@ -43,34 +43,47 @@ def load_data(uploaded_file, file_type):
 
 def generate_data_summary(df):
     """
-    Generate a textual summary of the dataset.
-
+    Generate a textual summary of the DataFrame.
+    
     Args:
         df (pd.DataFrame): The DataFrame to summarize.
-
+    
     Returns:
-        str: A string containing summary statistics and information about the dataset.
+        str: Summary of the DataFrame.
     """
-    try:
-        summary = "### Dataset Summary\n\n"
-        summary += f"**Number of Rows:** {df.shape[0]}\n\n"
-        summary += f"**Number of Columns:** {df.shape[1]}\n\n"
-        summary += "**Column Information:**\n\n"
+    summary = df.describe(include='all').to_string()
+    return summary
+    
+# def generate_data_summary(df):
+#     """
+#     Generate a textual summary of the dataset.
+
+#     Args:
+#         df (pd.DataFrame): The DataFrame to summarize.
+
+#     Returns:
+#         str: A string containing summary statistics and information about the dataset.
+#     """
+#     try:
+#         summary = "### Dataset Summary\n\n"
+#         summary += f"**Number of Rows:** {df.shape[0]}\n\n"
+#         summary += f"**Number of Columns:** {df.shape[1]}\n\n"
+#         summary += "**Column Information:**\n\n"
         
-        # Use StringIO to capture df.info() output
-        buffer = StringIO()
-        df.info(buf=buffer)
-        info_str = buffer.getvalue()
-        summary += info_str
+#         # Use StringIO to capture df.info() output
+#         buffer = StringIO()
+#         df.info(buf=buffer)
+#         info_str = buffer.getvalue()
+#         summary += info_str
         
-        summary += "\n\n**Descriptive Statistics:**\n\n"
-        summary += df.describe(include='all').to_string()
-        logging.info("Data summary generated successfully.")
-        return summary
-    except Exception as e:
-        logging.error(f"Error generating data summary: {e}")
-        # Instead of using st.error here, return an error message
-        return "Failed to generate data summary."
+#         summary += "\n\n**Descriptive Statistics:**\n\n"
+#         summary += df.describe(include='all').to_string()
+#         logging.info("Data summary generated successfully.")
+#         return summary
+#     except Exception as e:
+#         logging.error(f"Error generating data summary: {e}")
+#         # Instead of using st.error here, return an error message
+#         return "Failed to generate data summary."
 
 @st.cache_data(show_spinner=False)
 def clean_data(df, cleaning_suggestions):
