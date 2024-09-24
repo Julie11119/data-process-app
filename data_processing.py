@@ -16,20 +16,22 @@ def load_data(uploaded_file, file_type):
     
     Args:
         uploaded_file (UploadedFile): The uploaded file from Streamlit.
-        file_type (str): Type of the file ('csv', 'excel', 'json').
+        file_type (str): Type of the file (e.g., 'csv', 'xlsx', 'json').
     
     Returns:
         pd.DataFrame: Loaded DataFrame.
+    
+    Raises:
+        ValueError: If the file type is unsupported.
     """
     if file_type == "csv":
         df = pd.read_csv(uploaded_file)
-    elif file_type == "excel":
+    elif file_type in ["xlsx", "xls", "xlsm"]:
         df = pd.read_excel(uploaded_file)
     elif file_type == "json":
         df = pd.read_json(uploaded_file)
     else:
         raise ValueError("Unsupported file type.")
-    
     return df
 
 def generate_data_summary(df):
