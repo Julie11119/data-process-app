@@ -47,17 +47,17 @@ if uploaded_file is not None:
     file_extension = os.path.splitext(uploaded_file.name)[1].lower()  # e.g., '.xlsx'
     file_type = file_extension[1:]  # e.g., 'xlsx'
     
-    st.write(f"Detected file type: `{file_type}`")  # Debugging statement
+    st.write(f"**Detected file type:** `{file_type}`")  # Debugging statement
     
     try:
         # Load data
         with st.spinner('Loading data...'):
             df = load_data(uploaded_file, file_type)
             time.sleep(1)  # Simulate processing time
-        st.success('Data loaded successfully!')
+        st.success('✅ Data loaded successfully!')
         
         # Display DataFrame Information
-        st.subheader("🗂️ Cleaned Data Information")
+        st.subheader("🗂️ Data Information")
         st.write("**Shape:**", df.shape)
         st.write("**Data Types:**")
         st.write(df.dtypes)
@@ -65,7 +65,7 @@ if uploaded_file is not None:
         st.write(df.isnull().sum())
         
         # Display Sample Data
-        st.subheader("🔍 Cleaned Data Sample")
+        st.subheader("🔍 Data Sample")
         st.dataframe(df.head())
         
         # Generate data summary
@@ -76,18 +76,19 @@ if uploaded_file is not None:
         # Get cleaning suggestions from OpenAI
         st.subheader("💡 Data Cleaning Suggestions")
         cleaning_suggestions = get_cleaning_suggestions(data_summary)
-        st.write(cleaning_suggestions)
+        st.write("**Suggestions:**")
+        st.json(cleaning_suggestions)  # Display as JSON for clarity
         
     except ValueError as ve:
-        st.error(f"Value Error: {ve}. Please ensure you're uploading a supported file type (CSV, Excel, JSON).")
+        st.error(f"⚠️ Value Error: {ve}. Please ensure you're uploading a supported file type (CSV, Excel, JSON).")
     except Exception as e:
-        st.error(f"An unexpected error occurred while loading the data: {e}")
+        st.error(f"⚠️ An unexpected error occurred while loading the data: {e}")
     else:
         # Clean data based on suggestions
-        with st.spinner('Cleaning data based on suggestions...'):
+        with st.spinner('🧼 Cleaning data based on suggestions...'):
             df_cleaned = clean_data(df, cleaning_suggestions)
             time.sleep(1)  # Simulate processing time
-        st.success('Data cleaning completed!')
+        st.success('✅ Data cleaning completed!')
         
         # Display Cleaned Data Information
         st.subheader("🗂️ Cleaned Data Information")
@@ -109,7 +110,8 @@ if uploaded_file is not None:
         # Get visualization suggestions from OpenAI
         st.subheader("🎨 Visualization Suggestions")
         visualization_suggestions = get_visualization_suggestions(cleaned_summary)
-        st.write(visualization_suggestions)
+        st.write("**Suggestions:**")
+        st.json(visualization_suggestions)
         
         # Suggest visualization types
         suggested_viz = suggest_visualizations(df_cleaned, visualization_suggestions)
@@ -125,7 +127,7 @@ if uploaded_file is not None:
             st.write("**Correlation Matrix:**")
             st.dataframe(eda_results.get('correlation_matrix', pd.DataFrame()))
             
-            # Example: Display a heatmap of the correlation matrix
+            # Display Correlation Heatmap
             if 'correlation_matrix' in eda_results:
                 st.write("**Correlation Heatmap:**")
                 fig = create_heatmap(eda_results['correlation_matrix'])
@@ -141,7 +143,7 @@ if uploaded_file is not None:
                     fig = create_histogram(df_cleaned, selected_col)
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.warning("No numeric columns available for Histogram.")
+                    st.warning("⚠️ No numeric columns available for Histogram.")
             
             elif viz.lower() == "scatter plot":
                 numeric_cols = df_cleaned.select_dtypes(include=[np.number]).columns
@@ -153,7 +155,7 @@ if uploaded_file is not None:
                     fig = create_scatter_plot(df_cleaned, x_col, y_col, color_col)
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.warning("Not enough numeric columns available for Scatter Plot.")
+                    st.warning("⚠️ Not enough numeric columns available for Scatter Plot.")
             
             elif viz.lower() == "box plot":
                 numeric_cols = df_cleaned.select_dtypes(include=[np.number]).columns
@@ -164,7 +166,7 @@ if uploaded_file is not None:
                     fig = create_box_plot(df_cleaned, numeric_col, category_col)
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.warning("Not enough columns available for Box Plot.")
+                    st.warning("⚠️ Not enough columns available for Box Plot.")
             
             elif viz.lower() == "pie chart":
                 categorical_cols = df_cleaned.select_dtypes(include=['object', 'category']).columns
@@ -173,7 +175,7 @@ if uploaded_file is not None:
                     fig = create_pie_chart(df_cleaned, selected_col)
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.warning("No categorical columns available for Pie Chart.")
+                    st.warning("⚠️ No categorical columns available for Pie Chart.")
             
             elif viz.lower() == "choropleth map":
                 # Assuming there's a 'country' column and a 'total_amount' column
@@ -181,7 +183,7 @@ if uploaded_file is not None:
                     fig = create_choropleth(df_cleaned, 'country', 'total_amount')
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.warning("Choropleth Map requires 'country' and 'total_amount' columns.")
+                    st.warning("⚠️ Choropleth Map requires 'country' and 'total_amount' columns.")
             
             # Add more visualization types as needed
         
@@ -195,7 +197,7 @@ if uploaded_file is not None:
         user_query = st.sidebar.text_input("Enter your question about the data:")
         
         if user_query:
-            with st.spinner('Processing your query...'):
+            with st.spinner('🗣️ Processing your query...'):
                 # Generate a prompt for OpenAI
                 prompt = f"""
                 You are a data analyst assistant. Given the following dataset summary, answer the user's question with appropriate data analysis steps or visualizations.
@@ -223,20 +225,20 @@ if uploaded_file is not None:
         if len(target_options) > 0:
             target_column = st.sidebar.selectbox("Select Target Column for Prediction", target_options)
             
-            if st.sidebar.button('Build Initial Model'):
-                with st.spinner('Building model...'):
+            if st.sidebar.button('🚀 Build Initial Model'):
+                with st.spinner('🔧 Building model...'):
                     model_results = build_initial_model(df_cleaned, target_column)
                     time.sleep(1)  # Simulate processing time
-                st.success('Model built successfully!')
+                st.success('✅ Model built successfully!')
                 st.write(f"**Mean Squared Error:** {model_results['mse']}")
         else:
-            st.sidebar.warning("No numeric columns available for machine learning.")
+            st.sidebar.warning("⚠️ No numeric columns available for machine learning.")
         
         # Sidebar: Automated Report Generation
         st.sidebar.header('4. Generate Report')
         
-        if st.sidebar.button('Generate Narrative Insights'):
-            with st.spinner('Generating report...'):
+        if st.sidebar.button('📄 Generate Narrative Insights'):
+            with st.spinner('📑 Generating report...'):
                 narrative_insights = generate_narrative_insights(df_cleaned, eda_results)
                 time.sleep(1)  # Simulate processing time
             st.subheader("📄 Narrative Insights")
