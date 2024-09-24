@@ -101,7 +101,7 @@ def get_cleaning_suggestions(data_description):
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Or GPT-4
+            model="gpt-4",  # Ensure you have access to GPT-4
             messages=[
                 {"role": "system", "content": "You are a helpful data scientist assistant."},
                 {"role": "user", "content": prompt}
@@ -110,13 +110,13 @@ def get_cleaning_suggestions(data_description):
             temperature=0.3,
         )
         suggestions = response.choices[0].message['content'].strip()
-        
+
         # Parse JSON
         suggestions_json = json.loads(suggestions)
-        
+
         # Validate JSON schema
         validate(instance=suggestions_json, schema=cleaning_schema)
-        
+
         logging.info("Received and validated cleaning suggestions from OpenAI.")
         return suggestions_json
     except json.JSONDecodeError as e:
@@ -167,7 +167,7 @@ def get_visualization_suggestions(data_description):
             temperature=0.3,
         )
         suggestions = response.choices[0].message['content'].strip()
-        
+
         # Assuming suggestions are comma-separated
         logging.info("Received visualization suggestions from OpenAI.")
         return suggestions
@@ -179,3 +179,35 @@ def get_visualization_suggestions(data_description):
         st.error(f"⚠️ An unexpected error occurred: {e}")
         logging.error(f"Unexpected error: {e}")
         return ""
+
+def get_narrative_response(prompt):
+    """
+    Get a narrative response from OpenAI based on a user query.
+
+    Args:
+        prompt (str): The user-generated prompt.
+
+    Returns:
+        str: The narrative response from OpenAI.
+    """
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[
+                {"role": "system", "content": "You are a helpful data analysis assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=500,
+            temperature=0.3,
+        )
+        narrative = response.choices[0].message['content'].strip()
+        logging.info("Received narrative response from OpenAI.")
+        return narrative
+    except openai.error.OpenAIError as e:
+        st.error(f"⚠️ OpenAI API Error: {e}")
+        logging.error(f"OpenAI error: {e}")
+        return "Failed to generate a response due to an OpenAI API error."
+    except Exception as e:
+        st.error(f"⚠️ An unexpected error occurred: {e}")
+        logging.error(f"Unexpected error: {e}")
+        return "An unexpected error occurred while generating the response."
