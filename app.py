@@ -68,10 +68,10 @@ if uploaded_file is not None:
         st.subheader("🔍 Data Sample")
         st.dataframe(df.head())
         
-        # Generate data summary
-        st.subheader("📝 Dataset Summary")
-        data_summary = generate_data_summary(df)
-        st.text(data_summary)
+        # # Generate data summary
+        # st.subheader("📝 Dataset Summary")
+        # data_summary = generate_data_summary(df)
+        # st.text(data_summary)
         
         # Get cleaning suggestions from OpenAI
         st.subheader("💡 Data Cleaning Suggestions")
