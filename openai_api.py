@@ -2,11 +2,11 @@
 
 import openai
 import streamlit as st
-import logging
 import json
 import re
-from jsonschema import validate, ValidationError
 import time
+import logging
+from jsonschema import validate, ValidationError
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +14,49 @@ logging.basicConfig(level=logging.INFO)
 # Load OpenAI API key from Streamlit secrets
 openai.api_key = st.secrets["openai_api_key"]
 
+# Define JSON schema for cleaning suggestions
+cleaning_schema = {
+    "type": "object",
+    "properties": {
+        "missing_values": {
+            "type": "object",
+            "properties": {
+                "strategy": {"type": "string", "enum": ["drop", "fill"]},
+                "columns": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "fill_value": {"type": ["string", "number", "null"]}
+            },
+            "required": ["strategy", "columns"]
+        },
+        "outliers": {
+            "type": "object",
+            "properties": {
+                "strategy": {"type": "string", "enum": ["remove", "cap"]},
+                "columns": {
+                    "type": "array",
+                    "items": {"type": "string"}
+                },
+                "method": {"type": "string", "enum": ["IQR", "Z-score"]},
+                "cap_value": {"type": ["number", "null"]}
+            },
+            "required": ["strategy", "columns", "method"]
+        },
+        "data_types": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "string",
+                "enum": ["int", "float", "category", "datetime"]
+            }
+        },
+        "additional_steps": {
+            "type": "array",
+            "items": {"type": "string"}
+        }
+    },
+    "required": ["missing_values", "outliers", "data_types"]
+}
 
 def extract_json_from_response(response_text):
     """
@@ -91,7 +134,7 @@ def get_cleaning_suggestions(data_description, retries=3):
                     {"role": "system", "content": "You are a helpful data scientist assistant."},
                     {"role": "user", "content": prompt}
                 ],
-                max_tokens=500,
+                max_tokens=700,
                 temperature=0.3,
             )
             suggestions = response.choices[0].message['content'].strip()
@@ -140,16 +183,17 @@ def get_cleaning_suggestions(data_description, retries=3):
             logging.error(f"Unexpected error: {e}")
             return {}
 
-
-def get_visualization_suggestions(data_description):
+def get_visualization_suggestions(data_description, retries=3):
     """
     Get visualization suggestions from OpenAI based on the dataset description.
+    Implements a retry mechanism in case of parsing failures.
 
     Args:
         data_description (str): Description of the dataset.
+        retries (int): Number of retries in case of failure.
 
     Returns:
-        str: Visualization suggestions as a comma-separated string.
+        list: List of suggested visualization types.
     """
     prompt = f"""
     You are a data visualization expert. Given the following dataset description, suggest the most effective visualizations to uncover insights and trends.
@@ -161,58 +205,29 @@ def get_visualization_suggestions(data_description):
     Histogram, Scatter Plot, Box Plot
     """
 
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",  # Ensure you have access to GPT-4
-            messages=[
-                {"role": "system", "content": "You are a helpful data visualization expert."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=200,
-            temperature=0.3,
-        )
-        suggestions = response.choices[0].message['content'].strip()
+    for attempt in range(retries):
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[
+                    {"role": "system", "content": "You are a helpful data visualization expert."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=200,
+                temperature=0.3,
+            )
+            suggestions = response.choices[0].message['content'].strip()
 
-        # Assuming suggestions are comma-separated
-        logging.info("Received visualization suggestions from OpenAI.")
-        return suggestions
-    except openai.error.OpenAIError as e:
-        st.error(f"⚠️ OpenAI API Error: {e}")
-        logging.error(f"OpenAI error: {e}")
-        return ""
-    except Exception as e:
-        st.error(f"⚠️ An unexpected error occurred: {e}")
-        logging.error(f"Unexpected error: {e}")
-        return ""
+            # Split the suggestions into a list
+            viz_list = [viz.strip() for viz in suggestions.split(',') if viz.strip()]
+            logging.info("Received visualization suggestions from OpenAI.")
+            return viz_list
+        except openai.error.OpenAIError as e:
+            st.error(f"⚠️ OpenAI API Error: {e}")
+            logging.error(f"OpenAI error: {e}")
+            return []
+        except Exception as e:
+            st.error(f"⚠️ An unexpected error occurred: {e}")
+            logging.error(f"Unexpected error: {e}")
+            return []
 
-def get_narrative_response(prompt):
-    """
-    Get a narrative response from OpenAI based on a user query.
-
-    Args:
-        prompt (str): The user-generated prompt.
-
-    Returns:
-        str: The narrative response from OpenAI.
-    """
-    try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4",
-            messages=[
-                {"role": "system", "content": "You are a helpful data analysis assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=500,
-            temperature=0.3,
-        )
-        narrative = response.choices[0].message['content'].strip()
-        logging.info("Received narrative response from OpenAI.")
-        return narrative
-    except openai.error.OpenAIError as e:
-        st.error(f"⚠️ OpenAI API Error: {e}")
-        logging.error(f"OpenAI error: {e}")
-        return "Failed to generate a response due to an OpenAI API error."
-    except Exception as e:
-        st.error(f"⚠️ An unexpected error occurred: {e}")
-        logging.error(f"Unexpected error: {e}")
-        return "An unexpected error occurred while generating the response."
