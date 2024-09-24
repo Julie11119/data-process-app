@@ -57,68 +57,117 @@ if uploaded_file is not None:
         st.success('✅ Data loaded successfully!')
         
         # Display DataFrame Information
-        st.subheader("🗂️ Data Information")
-        st.write("**Shape:**", df.shape)
-        st.write("**Data Types:**")
-        st.write(df.dtypes)
-        st.write("**Missing Values:**")
-        st.write(df.isnull().sum())
-        
-        # Display Sample Data
-        st.subheader("🔍 Data Sample")
+        st.subheader("🗂️ Raw Data")
         st.dataframe(df.head())
+
+        # Generate a summary of the dataset
+        st.subheader("📝 Dataset Summary")
+        df_summary = df.describe(include='all').to_string()
+        data_summary = generate_data_summary(df)
+        st.text(df_summary)
+
+        # Get cleaning suggestions from OpenAI
+        with st.spinner("💡 Getting cleaning suggestions from OpenAI..."):
+            suggestions = get_cleaning_suggestions(df_summary)
+        st.subheader("💡 Cleaning Suggestions")
+        if suggestions:
+            try:
+                suggestions_json = json.loads(suggestions)
+                st.json(suggestions_json)
+            except json.JSONDecodeError:
+                st.error("⚠️ Failed to parse cleaning suggestions. Please ensure the response is in valid JSON format.")
+                st.text(suggestions)
+                suggestions_json = {}
+        else:
+            st.warning("⚠️ No cleaning suggestions received.")
+            suggestions_json = {}
+
+        # Apply the cleaning suggestions
+        if suggestions_json:
+            with st.spinner("🧼 Cleaning data based on suggestions..."):
+                df_cleaned = apply_cleaning_suggestions(df.copy(), suggestions_json)
+            st.success("✅ Data cleaning completed!")
+
+            st.subheader("🗂️ Cleaned Data")
+            st.dataframe(df_cleaned.head())
+            df_cleaned_summary = df_cleaned.describe(include='all').to_string()
+            st.text(df_cleaned_summary)
+            
+        # # Display DataFrame Information
+        # st.subheader("🗂️ Data Information")
+        # st.write("**Shape:**", df.shape)
+        # st.write("**Data Types:**")
+        # st.write(df.dtypes)
+        # st.write("**Missing Values:**")
+        # st.write(df.isnull().sum())
+        
+        # # Display Sample Data
+        # st.subheader("🔍 Data Sample")
+        # st.dataframe(df.head())
         
         # Generate data summary
         # st.subheader("📝 Dataset Summary")
-        data_summary = generate_data_summary(df)
         # st.text(data_summary)
         
         # Get cleaning suggestions from OpenAI
-        st.subheader("💡 Data Cleaning Suggestions")
-        cleaning_suggestions = get_cleaning_suggestions(data_summary)
-        if cleaning_suggestions:
-            st.write("**Suggestions:**")
-            st.json(cleaning_suggestions)  # Display as JSON for clarity
-        else:
-            st.warning("⚠️ No cleaning suggestions received.")
+    #     st.subheader("💡 Data Cleaning Suggestions")
+    #     cleaning_suggestions = get_cleaning_suggestions(data_summary)
+    #     if cleaning_suggestions:
+    #         st.write("**Suggestions:**")
+    #         st.json(cleaning_suggestions)  # Display as JSON for clarity
+    #     else:
+    #         st.warning("⚠️ No cleaning suggestions received.")
         
-    except ValueError as ve:
-        st.error(f"⚠️ Value Error: {ve}. Please ensure you're uploading a supported file type (CSV, Excel, JSON).")
-    except Exception as e:
-        st.error(f"⚠️ An unexpected error occurred while loading the data: {e}")
-    else:
-        if cleaning_suggestions:
-            # Clean data based on suggestions
-            with st.spinner('🧼 Cleaning data based on suggestions...'):
-                df_cleaned = clean_data(df, cleaning_suggestions)
-                time.sleep(1)  # Simulate processing time
-            st.success('✅ Data cleaning completed!')
+    # except ValueError as ve:
+    #     st.error(f"⚠️ Value Error: {ve}. Please ensure you're uploading a supported file type (CSV, Excel, JSON).")
+    # except Exception as e:
+    #     st.error(f"⚠️ An unexpected error occurred while loading the data: {e}")
+    # else:
+    #     if cleaning_suggestions:
+    #         # Clean data based on suggestions
+    #         with st.spinner('🧼 Cleaning data based on suggestions...'):
+    #             df_cleaned = clean_data(df, cleaning_suggestions)
+    #             time.sleep(1)  # Simulate processing time
+    #         st.success('✅ Data cleaning completed!')
             
-            # Display Cleaned Data Information
-            st.subheader("🗂️ Cleaned Data Information")
-            st.write("**Shape:**", df_cleaned.shape)
-            st.write("**Data Types:**")
-            st.write(df_cleaned.dtypes)
-            st.write("**Missing Values:**")
-            st.write(df_cleaned.isnull().sum())
+    #         # Display Cleaned Data Information
+    #         st.subheader("🗂️ Cleaned Data Information")
+    #         st.write("**Shape:**", df_cleaned.shape)
+    #         st.write("**Data Types:**")
+    #         st.write(df_cleaned.dtypes)
+    #         st.write("**Missing Values:**")
+    #         st.write(df_cleaned.isnull().sum())
             
-            # Display Cleaned Data Sample
-            st.subheader("🔍 Cleaned Data Sample")
-            st.dataframe(df_cleaned.head())
+    #         # Display Cleaned Data Sample
+    #         st.subheader("🔍 Cleaned Data Sample")
+    #         st.dataframe(df_cleaned.head())
             
-            # Generate summary of cleaned data
-            # st.subheader("📝 Cleaned Data Summary")
-            cleaned_summary = generate_data_summary(df_cleaned)
-            # st.text(cleaned_summary)
+    #         # Generate summary of cleaned data
+    #         # st.subheader("📝 Cleaned Data Summary")
+    #         cleaned_summary = generate_data_summary(df_cleaned)
+    #         # st.text(cleaned_summary)
             
             # Get visualization suggestions from OpenAI
+            with st.spinner("🎨 Getting visualization suggestions from OpenAI..."):
+                viz_suggestions = get_visualization_suggestions(df_summary)
+
             st.subheader("🎨 Visualization Suggestions")
-            visualization_suggestions = get_visualization_suggestions(cleaned_summary)
-            if visualization_suggestions:
-                st.write("**Suggestions:**")
-                st.write(visualization_suggestions)
+            if viz_suggestions:
+                st.write(", ".join(viz_suggestions))
             else:
                 st.warning("⚠️ No visualization suggestions received.")
+        else:
+            st.warning("⚠️ Unable to clean data without valid suggestions.")
+
+            # # Get visualization suggestions from OpenAI
+            # st.subheader("🎨 Visualization Suggestions")
+            # visualization_suggestions = get_visualization_suggestions(cleaned_summary)
+            # if visualization_suggestions:
+            #     st.write("**Suggestions:**")
+            #     st.write(visualization_suggestions)
+            # else:
+            #     st.warning("⚠️ No visualization suggestions received.")
+
             
             # Suggest visualization types
             if visualization_suggestions:
