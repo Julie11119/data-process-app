@@ -78,7 +78,7 @@ if uploaded_file is not None:
         cleaning_suggestions = get_cleaning_suggestions(data_summary)
         if cleaning_suggestions:
             st.write("**Suggestions:**")
-            st.json(cleaning_suggestions)  # Display as JSON for clarity
+            # st.json(cleaning_suggestions)  # Display as JSON for clarity
         else:
             st.warning("⚠️ No cleaning suggestions received.")
         
