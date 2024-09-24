@@ -3,7 +3,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from openai_api import get_cleaning_suggestions, get_visualization_suggestions, get_narrative_response
+from openai_api import get_cleaning_suggestions, get_visualization_suggestions
 from data_processing import (
     load_data,
     generate_data_summary,
