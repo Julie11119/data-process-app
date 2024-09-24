@@ -70,7 +70,7 @@ if uploaded_file is not None:
         
         # # Generate data summary
         # st.subheader("📝 Dataset Summary")
-        # data_summary = generate_data_summary(df)
+        data_summary = generate_data_summary(df)
         # st.text(data_summary)
         
         # Get cleaning suggestions from OpenAI
