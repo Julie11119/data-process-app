@@ -52,6 +52,9 @@ if uploaded_file is not None:
         cleaning_suggestions = get_cleaning_suggestions(data_summary)
         st.write(cleaning_suggestions)
         
+    except Exception as e:
+        st.error(f"An error occurred while loading the data: {e}")
+    else:
         # Clean data based on suggestions
         with st.spinner('Cleaning data based on suggestions...'):
             df_cleaned = clean_data(df, cleaning_suggestions)
@@ -137,7 +140,7 @@ if uploaded_file is not None:
                     st.warning("Choropleth Map requires 'country' and 'total_amount' columns.")
             
             # Add more visualization types as needed
-    
+        
         # Option to download cleaned data
         st.subheader("📥 Download Cleaned Data")
         csv_cleaned = df_cleaned.to_csv(index=False)
@@ -163,7 +166,7 @@ if uploaded_file is not None:
                 """
                 
                 # Fetch response from OpenAI
-                response = get_cleaning_suggestions(prompt)  # Reuse cleaning_suggestions function for simplicity
+                response = get_cleaning_suggestions(prompt)  # Reuse the cleaning_suggestions function for simplicity
                 answer = response  # Extract answer from response
                 
                 # Note: For more accurate natural language processing, consider implementing a separate function.
@@ -198,5 +201,5 @@ if uploaded_file is not None:
             st.subheader("📄 Narrative Insights")
             st.write(narrative_insights)
         
-    else:
-        st.info("📥 Please upload a dataset to begin.")
+else:
+    st.info("📥 Please upload a dataset to begin.")
