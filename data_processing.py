@@ -40,6 +40,34 @@ def load_data(uploaded_file, file_type):
         logging.error(f"Error loading data: {e}")
         raise ValueError(f"Failed to load data: {e}")
 
+def generate_data_summary(df):
+    """
+    Generate a textual summary of the dataset.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to summarize.
+
+    Returns:
+        str: A string containing summary statistics and information about the dataset.
+    """
+    try:
+        summary = "### Dataset Summary\n\n"
+        summary += f"**Number of Rows:** {df.shape[0]}\n\n"
+        summary += f"**Number of Columns:** {df.shape[1]}\n\n"
+        summary += "**Column Information:**\n\n"
+        buffer = []
+        df.info(buf=buffer)
+        info_str = "\n".join(buffer)
+        summary += info_str
+        summary += "\n\n**Descriptive Statistics:**\n\n"
+        summary += df.describe(include='all').to_string()
+        logging.info("Data summary generated successfully.")
+        return summary
+    except Exception as e:
+        logging.error(f"Error generating data summary: {e}")
+        st.error(f"⚠️ Failed to generate data summary: {e}")
+        return "Failed to generate data summary."
+
 @st.cache_data(show_spinner=False)
 def clean_data(df, cleaning_suggestions):
     """
@@ -270,7 +298,7 @@ def generate_narrative_insights(df, eda_results):
             insights += "No correlations to report."
             return insights
         
-        # Find top 3 positive and negative correlations
+        # Find top correlations
         corr_unstacked = corr.abs().unstack()
         corr_unstacked = corr_unstacked[corr_unstacked < 1]  # Exclude self-correlation
         top_correlations = corr_unstacked.sort_values(ascending=False).drop_duplicates().head(6)
