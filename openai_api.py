@@ -129,7 +129,7 @@ def get_cleaning_suggestions(data_description, retries=3):
     for attempt in range(retries):
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-4",  # Ensure you have access to GPT-4
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": "You are a helpful data scientist assistant."},
                     {"role": "user", "content": prompt}
@@ -182,6 +182,7 @@ def get_cleaning_suggestions(data_description, retries=3):
             st.error(f"⚠️ An unexpected error occurred: {e}")
             logging.error(f"Unexpected error: {e}")
             return {}
+
 
 def get_visualization_suggestions(data_description):
     """
