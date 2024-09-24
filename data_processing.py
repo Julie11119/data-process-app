@@ -65,19 +65,6 @@ def clean_data(df, cleaning_suggestions):
         
         elif mv_strategy == "fill" and mv_columns:
             for col in mv_columns:
-                # if df[col].dtype in [np.int64, np.float64]:  # Check if numeric column
-                #     if fill_value == "mean":
-                #         df[col] = df[col].fillna(df[col].mean())
-                #     elif fill_value == "median":
-                #         df[col] = df[col].fillna(df[col].median())
-                # elif df[col].dtype == 'object':  # Handle categorical columns
-                #     if fill_value == "mode":
-                #         df[col] = df[col].fillna(df[col].mode()[0])
-                #     else:
-                #         df[col] = df[col].fillna(mv_fill)  # Fill with custom value or default
-                # else:
-                #     st.warning(f"⚠️ Column '{col}' is neither numeric nor categorical, cannot apply fill strategy.")
-                
                 if mv_fill == "mean":
                     if df[col].dtype in [np.int64, np.float64]:  # Check if numeric column
                         df[col] = df[col].fillna(df[col].mean())
@@ -99,8 +86,8 @@ def clean_data(df, cleaning_suggestions):
                     else:
                         df[col] = df[col].fillna(mv_fill)  # Handle as generic object type
                         
-                else:
-                    fill_values[col] = df[col].mode()[0]  # Default to mode if unspecified
+        else:
+            fill_values[col] = df[col].mode()[0]  # Default to mode if unspecified
             # df = df.fillna(value=fill_values)
             logging.info(f"Filled missing values in columns: {mv_columns} with {mv_fill}")
         
