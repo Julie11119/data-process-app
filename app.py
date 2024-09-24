@@ -106,10 +106,10 @@ if uploaded_file is not None:
             st.subheader("🔍 Cleaned Data Sample")
             st.dataframe(df_cleaned.head())
             
-            # # Generate summary of cleaned data
-            # st.subheader("📝 Cleaned Data Summary")
-            # cleaned_summary = generate_data_summary(df_cleaned)
-            # st.text(cleaned_summary)
+            # Generate summary of cleaned data
+            st.subheader("📝 Cleaned Data Summary")
+            cleaned_summary = generate_data_summary(df_cleaned)
+            st.text(cleaned_summary)
             
             # Get visualization suggestions from OpenAI
             st.subheader("🎨 Visualization Suggestions")
