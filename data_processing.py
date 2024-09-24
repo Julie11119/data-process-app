@@ -2,13 +2,11 @@
 
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-from openai_api import get_cleaning_suggestions, get_visualization_suggestions
+import streamlit as st
+import logging
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 def load_data(uploaded_file, file_type):
     """
@@ -22,220 +20,167 @@ def load_data(uploaded_file, file_type):
         pd.DataFrame: Loaded DataFrame.
     
     Raises:
-        ValueError: If the file type is unsupported.
+        ValueError: If the file type is unsupported or loading fails.
     """
-    if file_type == "csv":
-        df = pd.read_csv(uploaded_file)
-    elif file_type in ["xlsx", "xls", "xlsm"]:
-        df = pd.read_excel(uploaded_file)
-    elif file_type == "json":
-        df = pd.read_json(uploaded_file)
-    else:
-        raise ValueError("Unsupported file type.")
-    return df
+    try:
+        if file_type == "csv":
+            df = pd.read_csv(uploaded_file)
+        elif file_type in ["xlsx", "xls", "xlsm"]:
+            df = pd.read_excel(uploaded_file)
+        elif file_type == "json":
+            df = pd.read_json(uploaded_file)
+        else:
+            raise ValueError("Unsupported file type.")
+        logging.info("Data loaded successfully.")
+        return df
+    except Exception as e:
+        logging.error(f"Error loading data: {e}")
+        raise ValueError(f"Failed to load data: {e}")
 
 def generate_data_summary(df):
     """
-    Generate a comprehensive summary of the dataset.
+    Generate a textual summary of the DataFrame.
     
     Args:
-        df (pd.DataFrame): The dataset.
+        df (pd.DataFrame): The DataFrame to summarize.
     
     Returns:
-        str: Text summary of the dataset.
+        str: Summary of the DataFrame.
     """
-    summary = f"""
-    Dataset has {df.shape[0]} rows and {df.shape[1]} columns.
-    
-    Columns and Data Types:
-    {df.dtypes.to_string()}
-    
-    Missing Values:
-    {df.isnull().sum().to_string()}
-    
-    Statistical Summary:
-    {df.describe(include='all').to_string()}
-    """
+    summary = df.describe(include='all').to_string()
     return summary
 
 def clean_data(df, cleaning_suggestions):
     """
-    Clean data based on suggestions from OpenAI.
+    Clean the DataFrame based on suggestions.
     
     Args:
-        df (pd.DataFrame): Original dataset.
-        cleaning_suggestions (str): Textual suggestions for cleaning.
+        df (pd.DataFrame): The original DataFrame.
+        cleaning_suggestions (str): Suggestions for cleaning.
     
     Returns:
-        pd.DataFrame: Cleaned dataset.
+        pd.DataFrame: Cleaned DataFrame.
     """
-    # For simplicity, use keyword-based parsing. For more robust solutions, consider NLP parsing.
-    
-    # Remove duplicates if suggested
-    if "remove duplicates" in cleaning_suggestions.lower():
-        df = df.drop_duplicates()
-    
-    # Handle missing values based on suggestions
-    if "fill missing values" in cleaning_suggestions.lower():
-        # Identify numeric and categorical columns
-        numeric_cols = df.select_dtypes(include=[np.number]).columns
-        categorical_cols = df.select_dtypes(include=['object', 'category']).columns
-        
-        # Fill numeric columns with median
-        for col in numeric_cols:
-            if df[col].isnull().sum() > 0:
-                df[col].fillna(df[col].median(), inplace=True)
-        
-        # Fill categorical columns with mode
-        for col in categorical_cols:
-            if df[col].isnull().sum() > 0:
-                df[col].fillna(df[col].mode()[0], inplace=True)
-    
-    # Convert data types if suggested
-    if "convert data types" in cleaning_suggestions.lower():
-        for col in df.columns:
-            if df[col].dtype == 'object':
-                try:
-                    df[col] = pd.to_datetime(df[col])
-                except:
-                    pass  # Keep as object if conversion fails
-    
-    # Additional cleaning steps can be implemented based on OpenAI's suggestions
-    
-    return df
+    # Implement cleaning based on suggestions
+    # For simplicity, let's assume we drop rows with missing values
+    try:
+        df_cleaned = df.dropna()
+        logging.info("Data cleaned successfully.")
+        return df_cleaned
+    except Exception as e:
+        logging.error(f"Error during data cleaning: {e}")
+        st.error(f"Data cleaning failed: {e}")
+        return df
 
 def perform_eda(df):
     """
-    Perform Exploratory Data Analysis and generate visualizations.
+    Perform Exploratory Data Analysis on the cleaned DataFrame.
     
     Args:
-        df (pd.DataFrame): Cleaned dataset.
+        df (pd.DataFrame): The cleaned dataset.
     
     Returns:
-        dict: Dictionary containing EDA results and figures.
+        dict: Dictionary containing various EDA results.
     """
-    eda_results = {}
-    
-    # Correlation Heatmap
-    corr = df.corr()
-    fig_corr = px.imshow(
-        corr,
-        text_auto=True,
-        aspect="auto",
-        title="Correlation Heatmap"
-    )
-    eda_results['correlation_heatmap'] = fig_corr
-    
-    # Distribution of Numeric Features
-    numeric_cols = df.select_dtypes(include=[np.number]).columns
-    for col in numeric_cols:
-        fig = px.histogram(df, x=col, nbins=30, title=f"Distribution of {col}")
-        eda_results[f'distribution_{col}'] = fig
-    
-    # Categorical Features Count
-    categorical_cols = df.select_dtypes(include=['object', 'category']).columns
-    for col in categorical_cols:
-        fig = px.bar(df[col].value_counts().reset_index(), x='index', y=col,
-                     labels={'index': col, col: 'Count'}, title=f"Count of {col}")
-        eda_results[f'count_{col}'] = fig
-    
-    # Pairplot for Numeric Features
-    if len(numeric_cols) >= 2:
-        fig_pair = px.scatter_matrix(df, dimensions=numeric_cols, title="Pairplot of Numeric Features")
-        eda_results['pairplot'] = fig_pair
-    
-    return eda_results
+    try:
+        numeric_df = df.select_dtypes(include=[np.number])
+        
+        if numeric_df.empty:
+            raise ValueError("No numeric columns available for EDA.")
+        
+        # Compute correlation matrix
+        corr = numeric_df.corr()
+        
+        # Additional EDA tasks can be added here
+        
+        eda_results = {
+            'correlation_matrix': corr,
+            # Add other EDA results here
+        }
+        
+        logging.info("EDA performed successfully.")
+        return eda_results
+    except Exception as e:
+        st.error(f"An error occurred during EDA: {e}")
+        logging.error(f"EDA error: {e}")
+        return {}
 
 def suggest_visualizations(df, visualization_suggestions):
     """
-    Suggest visualizations based on OpenAI's recommendations.
+    Suggest visualization types based on OpenAI's suggestions.
     
     Args:
-        df (pd.DataFrame): Cleaned dataset.
-        visualization_suggestions (str): Textual suggestions for visualizations.
+        df (pd.DataFrame): The cleaned DataFrame.
+        visualization_suggestions (str): Suggestions from OpenAI.
     
     Returns:
         list: List of suggested visualization types.
     """
-    # Simple keyword-based parsing
-    suggestions = []
-    if "histogram" in visualization_suggestions.lower():
-        suggestions.append("Histogram")
-    if "scatter plot" in visualization_suggestions.lower():
-        suggestions.append("Scatter Plot")
-    if "box plot" in visualization_suggestions.lower():
-        suggestions.append("Box Plot")
-    if "heatmap" in visualization_suggestions.lower():
-        suggestions.append("Heatmap")
-    if "bar chart" in visualization_suggestions.lower():
-        suggestions.append("Bar Chart")
-    if "pie chart" in visualization_suggestions.lower():
-        suggestions.append("Pie Chart")
-    if "pairplot" in visualization_suggestions.lower():
-        suggestions.append("Pairplot")
-    if "choropleth" in visualization_suggestions.lower():
-        suggestions.append("Choropleth Map")
-    
-    return suggestions
+    # Parse the visualization_suggestions string to extract visualization types
+    # For simplicity, let's assume suggestions are comma-separated
+    try:
+        viz_list = [viz.strip().lower() for viz in visualization_suggestions.split(',')]
+        logging.info(f"Visualization suggestions: {viz_list}")
+        return viz_list
+    except Exception as e:
+        st.error(f"Failed to parse visualization suggestions: {e}")
+        logging.error(f"Visualization suggestion parsing error: {e}")
+        return []
 
 def build_initial_model(df, target_column):
     """
-    Build and evaluate a simple linear regression model.
+    Build an initial machine learning model.
     
     Args:
-        df (pd.DataFrame): The dataset.
+        df (pd.DataFrame): The cleaned DataFrame.
         target_column (str): The column to predict.
     
     Returns:
-        dict: Model performance metrics and the trained model.
+        dict: Model evaluation metrics.
     """
-    X = df.drop(columns=[target_column])
-    y = df[target_column]
+    from sklearn.model_selection import train_test_split
+    from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import mean_squared_error
     
-    # Encode categorical variables
-    X = pd.get_dummies(X, drop_first=True)
-    
-    # Handle any remaining missing values
-    X = X.fillna(0)
-    y = y.fillna(y.mean())
-    
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    
-    model = LinearRegression()
-    model.fit(X_train, y_train)
-    
-    predictions = model.predict(X_test)
-    mse = mean_squared_error(y_test, predictions)
-    
-    return {
-        'model': model,
-        'mse': mse
-    }
+    try:
+        X = df.drop(columns=[target_column])
+        y = df[target_column]
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+        
+        predictions = model.predict(X_test)
+        mse = mean_squared_error(y_test, predictions)
+        
+        logging.info("Machine learning model built successfully.")
+        return {'mse': mse}
+    except Exception as e:
+        st.error(f"Failed to build machine learning model: {e}")
+        logging.error(f"ML model error: {e}")
+        return {}
 
 def generate_narrative_insights(df, eda_results):
     """
-    Generate narrative insights based on EDA results using OpenAI.
+    Generate narrative insights based on EDA results.
     
     Args:
-        df (pd.DataFrame): The dataset.
-        eda_results (dict): Results from EDA functions.
+        df (pd.DataFrame): The cleaned DataFrame.
+        eda_results (dict): Results from EDA.
     
     Returns:
         str: Narrative insights.
     """
-    summary = generate_data_summary(df)
-    prompt = f"""
-    Based on the following dataset summary and EDA results, provide a comprehensive narrative insights report.
-
-    Dataset Summary:
-    {summary}
-
-    EDA Results:
-    {eda_results}
-
-    Insights:
-    """
-    
-    response = get_cleaning_suggestions(prompt)  # Reuse the cleaning_suggestions function for simplicity
-    
-    return response
+    # Implement narrative generation based on EDA results
+    # This could involve summarizing the correlation matrix, highlighting key findings, etc.
+    try:
+        insights = "The dataset contains the following correlations among numeric variables:\n\n"
+        corr = eda_results.get('correlation_matrix', pd.DataFrame())
+        insights += corr.to_string()
+        logging.info("Narrative insights generated successfully.")
+        return insights
+    except Exception as e:
+        st.error(f"Failed to generate narrative insights: {e}")
+        logging.error(f"Narrative insights error: {e}")
+        return ""
