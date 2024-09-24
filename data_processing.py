@@ -64,17 +64,31 @@ def clean_data(df, cleaning_suggestions):
             logging.info(f"Dropped rows with missing values in columns: {mv_columns}")
         
         elif mv_strategy == "fill" and mv_columns:
-            fill_values = {}
+            # fill_values = {}
             for col in mv_columns:
                 if mv_fill == "mean":
-                    fill_values[col] = df[col].mean()
+                    if df[col].dtype in [np.int64, np.float64]:  # Check if numeric column
+                        df[col] = df[col].fillna(df[col].mean())
+                    else:
+                        st.warning(f"⚠️ Column '{col}' is not numeric, cannot fill with mean.")
+                    # fill_values[col] = df[col].mean()
                 elif mv_fill == "median":
-                    fill_values[col] = df[col].median()
-                elif isinstance(mv_fill, (int, float, str)):
-                    fill_values[col] = mv_fill
+                    if df[col].dtype in [np.int64, np.float64]:  # Check if numeric column
+                        df[col] = df[col].fillna(df[col].median())
+                    else:
+                        st.warning(f"⚠️ Column '{col}' is not numeric, cannot fill with median.")
+                    # fill_values[col] = df[col].median()
                 else:
-                    fill_values[col] = df[col].mode()[0]  # Default to mode if unspecified
-            df = df.fillna(value=fill_values)
+                # Ensure fill_value is the same type as the column
+                    if isinstance(mv_fill, str):
+                        df[col] = df[col].fillna(str(mv_fill))
+                    elif isinstance(fill_value, (int, float)):
+                        df[col] = df[col].fillna(float(mv_fill))
+                    else:
+                        df[col] = df[col].fillna(mv_fill)  # Handle as generic object type
+                # else:
+                #     fill_values[col] = df[col].mode()[0]  # Default to mode if unspecified
+            # df = df.fillna(value=fill_values)
             logging.info(f"Filled missing values in columns: {mv_columns} with {mv_fill}")
         
         # Handle Outliers
