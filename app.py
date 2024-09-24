@@ -12,6 +12,7 @@ from openai_api import (
 from data_processing import (
     load_data,
     generate_data_summary,
+    clean_data,
     perform_eda,
     suggest_visualizations,
     build_initial_model,
@@ -97,7 +98,7 @@ if uploaded_file is not None:
             # Apply the cleaning suggestions
             try:
                 with st.spinner("🧼 Cleaning data based on suggestions..."):
-                    df_cleaned = cleaning_suggestions(df.copy(), suggestions_json)
+                    df_cleaned = clean_data(df.copy(), suggestions_json)
                 st.success("✅ Data cleaning completed!")
             except Exception as e:
                 st.error(f"⚠️ An error occurred while cleaning the data: {e}")
