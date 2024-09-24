@@ -5,7 +5,7 @@ scikit-learn
 plotly
 matplotlib
 seaborn
-openai>=1.0.0
+openai
 openpyxl
 xlrd
 json5
