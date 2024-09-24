@@ -4,12 +4,26 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from openai_api import get_cleaning_suggestions, get_visualization_suggestions
-from data_processing import (load_data, generate_data_summary, clean_data, perform_eda, 
-                             suggest_visualizations, build_initial_model, generate_narrative_insights)
-from visualization import (create_histogram, create_scatter_plot, create_box_plot,
-                                 create_heatmap, create_pie_chart, create_choropleth)
-from helpers import identify_key_columns
+from data_processing import (
+    load_data,
+    generate_data_summary,
+    clean_data,
+    perform_eda,
+    suggest_visualizations,
+    build_initial_model,
+    generate_narrative_insights
+)
+from utils.visualization import (
+    create_histogram,
+    create_scatter_plot,
+    create_box_plot,
+    create_heatmap,
+    create_pie_chart,
+    create_choropleth
+)
+from utils.helpers import identify_key_columns
 import time
+import os
 
 # Streamlit app configuration
 st.set_page_config(
@@ -26,11 +40,14 @@ st.title('🧹 Advanced Data Preparation & EDA App')
 st.sidebar.header('1. Upload Your Dataset')
 
 # File uploader supporting CSV, Excel, JSON
-uploaded_file = st.sidebar.file_uploader("Choose a file", type=["csv", "xlsx", "json"])
+uploaded_file = st.sidebar.file_uploader("Choose a file", type=["csv", "xlsx", "xls", "xlsm", "json"])
 
 if uploaded_file is not None:
-    # Determine file type
-    file_type = uploaded_file.name.split('.')[-1].lower()
+    # Determine file type using robust method
+    file_extension = os.path.splitext(uploaded_file.name)[1].lower()  # e.g., '.xlsx'
+    file_type = file_extension[1:]  # e.g., 'xlsx'
+    
+    st.write(f"Detected file type: `{file_type}`")  # Debugging statement
     
     try:
         # Load data
@@ -39,7 +56,16 @@ if uploaded_file is not None:
             time.sleep(1)  # Simulate processing time
         st.success('Data loaded successfully!')
         
-        st.subheader("📄 Dataset Preview")
+        # Display DataFrame Information
+        st.subheader("🗂️ Cleaned Data Information")
+        st.write("**Shape:**", df.shape)
+        st.write("**Data Types:**")
+        st.write(df.dtypes)
+        st.write("**Missing Values:**")
+        st.write(df.isnull().sum())
+        
+        # Display Sample Data
+        st.subheader("🔍 Cleaned Data Sample")
         st.dataframe(df.head())
         
         # Generate data summary
@@ -52,8 +78,10 @@ if uploaded_file is not None:
         cleaning_suggestions = get_cleaning_suggestions(data_summary)
         st.write(cleaning_suggestions)
         
+    except ValueError as ve:
+        st.error(f"Value Error: {ve}. Please ensure you're uploading a supported file type (CSV, Excel, JSON).")
     except Exception as e:
-        st.error(f"An error occurred while loading the data: {e}")
+        st.error(f"An unexpected error occurred while loading the data: {e}")
     else:
         # Clean data based on suggestions
         with st.spinner('Cleaning data based on suggestions...'):
@@ -61,7 +89,16 @@ if uploaded_file is not None:
             time.sleep(1)  # Simulate processing time
         st.success('Data cleaning completed!')
         
-        st.subheader("🧼 Cleaned Data Preview")
+        # Display Cleaned Data Information
+        st.subheader("🗂️ Cleaned Data Information")
+        st.write("**Shape:**", df_cleaned.shape)
+        st.write("**Data Types:**")
+        st.write(df_cleaned.dtypes)
+        st.write("**Missing Values:**")
+        st.write(df_cleaned.isnull().sum())
+        
+        # Display Cleaned Data Sample
+        st.subheader("🔍 Cleaned Data Sample")
         st.dataframe(df_cleaned.head())
         
         # Generate summary of cleaned data
@@ -83,9 +120,16 @@ if uploaded_file is not None:
         st.subheader("📊 Exploratory Data Analysis")
         eda_results = perform_eda(df_cleaned)
         
-        # Display EDA visualizations
-        for key, fig in eda_results.items():
-            st.plotly_chart(fig, use_container_width=True)
+        if eda_results:
+            # Display Correlation Matrix
+            st.write("**Correlation Matrix:**")
+            st.dataframe(eda_results.get('correlation_matrix', pd.DataFrame()))
+            
+            # Example: Display a heatmap of the correlation matrix
+            if 'correlation_matrix' in eda_results:
+                st.write("**Correlation Heatmap:**")
+                fig = create_heatmap(eda_results['correlation_matrix'])
+                st.plotly_chart(fig, use_container_width=True)
         
         # Additional Visualizations Based on Suggestions
         st.subheader("🔍 Additional Visualizations")
@@ -155,21 +199,18 @@ if uploaded_file is not None:
                 # Generate a prompt for OpenAI
                 prompt = f"""
                 You are a data analyst assistant. Given the following dataset summary, answer the user's question with appropriate data analysis steps or visualizations.
-
+    
                 Dataset Summary:
                 {cleaned_summary}
-
+    
                 User Question:
                 {user_query}
-
+    
                 Response:
                 """
                 
                 # Fetch response from OpenAI
-                response = get_cleaning_suggestions(prompt)  # Reuse the cleaning_suggestions function for simplicity
-                answer = response  # Extract answer from response
-                
-                # Note: For more accurate natural language processing, consider implementing a separate function.
+                answer = get_cleaning_suggestions(prompt)  # Reuse the cleaning_suggestions function for simplicity
             
             st.subheader("💬 Response to Your Query")
             st.write(answer)
