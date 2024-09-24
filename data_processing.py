@@ -8,6 +8,7 @@ import logging
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
+@st.cache_data(show_spinner=False)
 def load_data(uploaded_file, file_type):
     """
     Load data from various file types.
@@ -50,6 +51,7 @@ def generate_data_summary(df):
     summary = df.describe(include='all').to_string()
     return summary
 
+@st.cache_data(show_spinner=False)
 def clean_data(df, cleaning_suggestions):
     """
     Clean the DataFrame based on suggestions.
@@ -72,6 +74,7 @@ def clean_data(df, cleaning_suggestions):
         st.error(f"Data cleaning failed: {e}")
         return df
 
+@st.cache_data(show_spinner=False)
 def perform_eda(df):
     """
     Perform Exploratory Data Analysis on the cleaned DataFrame.
