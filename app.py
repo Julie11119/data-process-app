@@ -58,6 +58,7 @@ if uploaded_file is not None:
         
         # Display DataFrame Information
         st.subheader("🗂️ Raw Data")
+        st.write("**Shape:**", df.shape)
         st.dataframe(df.head())
         
         # Generate data summary
