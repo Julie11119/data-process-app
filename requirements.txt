@@ -6,6 +6,8 @@ plotly
 matplotlib
 seaborn
 openai==0.28.0
+jsonschema
+scipy
 openpyxl
 xlrd
 json5
